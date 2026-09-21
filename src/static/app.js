@@ -3,6 +3,60 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const signupContainer = document.getElementById("signup-container");
+  const loginButton = document.getElementById("login-button");
+  const logoutButton = document.getElementById("logout-button");
+  const loginDialog = document.getElementById("login-dialog");
+  const loginForm = document.getElementById("login-form");
+  const cancelLoginButton = document.getElementById("cancel-login");
+  const loginMessage = document.getElementById("login-message");
+  let teacherAuthorization = sessionStorage.getItem("teacherAuthorization");
+
+  function updateTeacherControls() {
+    const loggedIn = Boolean(teacherAuthorization);
+    signupContainer.classList.toggle("hidden", !loggedIn);
+    loginButton.classList.toggle("hidden", loggedIn);
+    logoutButton.classList.toggle("hidden", !loggedIn);
+    document.querySelectorAll(".delete-btn").forEach((button) => {
+      button.classList.toggle("hidden", !loggedIn);
+    });
+  }
+
+  function showMessage(text, className, target = messageDiv) {
+    target.textContent = text;
+    target.className = className;
+    target.classList.remove("hidden");
+  }
+
+  loginButton.addEventListener("click", () => {
+    loginDialog.classList.remove("hidden");
+    document.getElementById("username").focus();
+  });
+
+  cancelLoginButton.addEventListener("click", () => {
+    loginDialog.classList.add("hidden");
+    loginForm.reset();
+    loginMessage.classList.add("hidden");
+  });
+
+  logoutButton.addEventListener("click", () => {
+    teacherAuthorization = null;
+    sessionStorage.removeItem("teacherAuthorization");
+    updateTeacherControls();
+    fetchActivities();
+  });
+
+  loginForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    teacherAuthorization = `Basic ${btoa(`${username}:${password}`)}`;
+    sessionStorage.setItem("teacherAuthorization", teacherAuthorization);
+    loginDialog.classList.add("hidden");
+    loginForm.reset();
+    updateTeacherControls();
+    fetchActivities();
+  });
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -30,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span><button class="delete-btn ${teacherAuthorization ? "" : "hidden"}" data-activity="${name}" data-email="${email}">❌</button></li>`
                   )
                   .join("")}
               </ul>
@@ -80,20 +134,19 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: { Authorization: teacherAuthorization },
         }
       );
 
       const result = await response.json();
 
       if (response.ok) {
-        messageDiv.textContent = result.message;
-        messageDiv.className = "success";
+        showMessage(result.message, "success");
 
         // Refresh activities list to show updated participants
         fetchActivities();
       } else {
-        messageDiv.textContent = result.detail || "An error occurred";
-        messageDiv.className = "error";
+        showMessage(result.detail || "An error occurred", "error");
       }
 
       messageDiv.classList.remove("hidden");
@@ -103,8 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.classList.add("hidden");
       }, 5000);
     } catch (error) {
-      messageDiv.textContent = "Failed to unregister. Please try again.";
-      messageDiv.className = "error";
+      showMessage("Failed to unregister. Please try again.", "error");
       messageDiv.classList.remove("hidden");
       console.error("Error unregistering:", error);
     }
@@ -124,21 +176,20 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: { Authorization: teacherAuthorization },
         }
       );
 
       const result = await response.json();
 
       if (response.ok) {
-        messageDiv.textContent = result.message;
-        messageDiv.className = "success";
+        showMessage(result.message, "success");
         signupForm.reset();
 
         // Refresh activities list to show updated participants
         fetchActivities();
       } else {
-        messageDiv.textContent = result.detail || "An error occurred";
-        messageDiv.className = "error";
+        showMessage(result.detail || "An error occurred", "error");
       }
 
       messageDiv.classList.remove("hidden");
@@ -148,13 +199,13 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.classList.add("hidden");
       }, 5000);
     } catch (error) {
-      messageDiv.textContent = "Failed to sign up. Please try again.";
-      messageDiv.className = "error";
+      showMessage("Failed to sign up. Please try again.", "error");
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
     }
   });
 
   // Initialize app
+  updateTeacherControls();
   fetchActivities();
 });
