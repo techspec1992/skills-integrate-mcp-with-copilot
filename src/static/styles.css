@@ -28,6 +28,13 @@ header h1 {
   margin-bottom: 10px;
 }
 
+.account-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+
 main {
   display: flex;
   flex-wrap: wrap;
@@ -190,6 +197,31 @@ button:hover {
 
 .hidden {
   display: none;
+}
+
+.dialog {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.dialog-content {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 400px);
+  padding: 25px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 footer {
